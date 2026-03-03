@@ -1,0 +1,529 @@
+{
+  "info": {
+    "name": "EnergyFlow API",
+    "_postman_id": "b489c8c5-a589-48fd-8f5c-93fe88e1839b",
+    "description": "All backend endpoints for manual testing in Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@energyflow.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_name\": \"Demo Energy Ltd\",\n  \"name\": \"Demo Owner\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"Password123\",\n  \"plan\": \"organisation\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/auth/profile"
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/refresh"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants (Super Admin)",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/tenant"
+          }
+        },
+        {
+          "name": "Get Tenant By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/tenant/{{tenant_id}}"
+          }
+        },
+        {
+          "name": "Suspend Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/tenant/{{tenant_id}}/suspend"
+          }
+        },
+        {
+          "name": "Activate Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/tenant/{{tenant_id}}/activate"
+          }
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"owner_name\": \"Updated Owner\",\n  \"owner_email\": \"updated-owner@example.com\",\n  \"branch_types\": [\"gas\", \"fuel\"]\n}"
+            },
+            "url": "{{base_url}}/tenant/{{tenant_id}}"
+          }
+        },
+        {
+          "name": "Change Tenant Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"organisation\"\n}"
+            },
+            "url": "{{base_url}}/tenant/{{tenant_id}}/plan"
+          }
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/tenant/{{tenant_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin (Super Admin)",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/admin/dashboard"
+          }
+        },
+        {
+          "name": "Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/admin/activity-logs?tenant={{tenant_id}}"
+          }
+        },
+        {
+          "name": "Billing",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/admin/billing?tenant={{tenant_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branches",
+      "item": [
+        {
+          "name": "List Branches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/branch"
+          }
+        },
+        {
+          "name": "List Branches By Type",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/branch/by-type?type=gas"
+          }
+        },
+        {
+          "name": "Create Branch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Branch\",\n  \"type\": \"gas\",\n  \"location\": \"Lagos\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": "{{base_url}}/branch"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gas",
+      "item": [
+        {
+          "name": "Gas Branches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/branches"
+          }
+        },
+        {
+          "name": "Create Gas Cylinder",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"size\": \"12.5kg\",\n  \"status\": \"in_stock\",\n  \"quantity\": 10,\n  \"purchase_price\": 10000,\n  \"selling_price\": 12000\n}"
+            },
+            "url": "{{base_url}}/gas/cylinders"
+          }
+        },
+        {
+          "name": "Get Gas Cylinders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/cylinders/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Gas Sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"type\": \"sale\",\n  \"cylinder_size\": \"12.5kg\",\n  \"quantity\": 2,\n  \"amount\": 24000,\n  \"notes\": \"Walk-in customer\"\n}"
+            },
+            "url": "{{base_url}}/gas/sales"
+          }
+        },
+        {
+          "name": "Get Gas Sales",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/sales/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Gas Daily Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"date\": \"2026-03-02\",\n  \"pump_readings\": { \"morning\": 120, \"evening\": 145 },\n  \"system_record_kg\": 220,\n  \"sun_adjustment_kg\": 0,\n  \"total_kg\": 220,\n  \"payment_breakdown\": { \"cash\": 100000, \"transfer\": 120000 }\n}"
+            },
+            "url": "{{base_url}}/gas/daily-activities"
+          }
+        },
+        {
+          "name": "Get Gas Daily Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/daily-activities/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Gas Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"category\": \"maintenance\",\n  \"amount\": 15000,\n  \"description\": \"Valve maintenance\"\n}"
+            },
+            "url": "{{base_url}}/gas/expenses"
+          }
+        },
+        {
+          "name": "Get Gas Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/expenses/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Gas Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/gas/analytics/{{branch_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fuel",
+      "item": [
+        {
+          "name": "Fuel Branches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/branches"
+          }
+        },
+        {
+          "name": "Create Fuel Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"type\": \"PMS\",\n  \"quantity\": 5000,\n  \"unit_price\": 650,\n  \"total_value\": 3250000\n}"
+            },
+            "url": "{{base_url}}/fuel/products"
+          }
+        },
+        {
+          "name": "Get Fuel Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/products/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Fuel Pump",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"pump_number\": \"PUMP-01\",\n  \"product_type\": \"PMS\",\n  \"current_reading\": 12000,\n  \"status\": \"active\"\n}"
+            },
+            "url": "{{base_url}}/fuel/pumps"
+          }
+        },
+        {
+          "name": "Get Fuel Pumps",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/pumps/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Shift Reconciliation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"shift_number\": 1,\n  \"start_reading\": 1000,\n  \"end_reading\": 1200,\n  \"sales_amount\": 130000,\n  \"variance\": 0\n}"
+            },
+            "url": "{{base_url}}/fuel/reconciliations"
+          }
+        },
+        {
+          "name": "Get Shift Reconciliations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/reconciliations/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Create Fuel Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": \"{{branch_id}}\",\n  \"category\": \"pump_maintenance\",\n  \"amount\": 20000,\n  \"description\": \"Pump calibration\"\n}"
+            },
+            "url": "{{base_url}}/fuel/expenses"
+          }
+        },
+        {
+          "name": "Get Fuel Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/expenses/{{branch_id}}"
+          }
+        },
+        {
+          "name": "Fuel Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/fuel/analytics/{{branch_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/user"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Station Staff\",\n  \"email\": \"staff@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"sales_staff\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"branch_ids\": [\"{{branch_id}}\"],\n  \"assigned_branch_types\": [\"gas\"]\n}"
+            },
+            "url": "{{base_url}}/user"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3001" },
+    { "key": "access_token", "value": "" },
+    { "key": "tenant_id", "value": "" },
+    { "key": "branch_id", "value": "" }
+  ]
+}
+
+
