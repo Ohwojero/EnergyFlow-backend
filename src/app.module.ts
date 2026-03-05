@@ -7,6 +7,7 @@ import { TenantsModule } from './modules/tenants/tenants.module'
 import { BranchesModule } from './modules/branches/branches.module'
 import { GasModule } from './modules/gas/gas.module'
 import { FuelModule } from './modules/fuel/fuel.module'
+import { FuelTransferModule } from './modules/fuel-transfer/fuel-transfer.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { SeedModule } from './modules/seed/seed.module'
 
@@ -35,6 +36,7 @@ import { SeedModule } from './modules/seed/seed.module'
     BranchesModule,
     GasModule,
     FuelModule,
+    FuelTransferModule,
     AdminModule,
     SeedModule,
   ],
