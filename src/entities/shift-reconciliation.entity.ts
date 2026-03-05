@@ -28,6 +28,15 @@ export class ShiftReconciliation {
   @Column({ type: 'numeric', precision: 14, scale: 2 })
   variance!: number
 
+  @Column({ type: 'varchar', length: 200, default: 'Unassigned' })
+  sales_staff_name!: string
+
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id?: string | null
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  created_by_role?: string | null
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date
 }

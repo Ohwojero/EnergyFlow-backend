@@ -54,7 +54,9 @@ export class BranchesService {
     dto: CreateBranchDto,
   ) {
     const tenantId =
-      current.role === UserRole.SUPER_ADMIN ? dto.tenant_id : current.tenant_id
+      current.role === UserRole.SUPER_ADMIN
+        ? dto.tenant_id
+        : await this.resolveTenantIdFromCurrentUser(current)
     if (!tenantId) {
       throw new BadRequestException('Missing tenant_id')
     }
@@ -115,6 +117,24 @@ export class BranchesService {
     await this.tenantsRepo.save(tenant)
 
     return saved
+  }
+
+  private async resolveTenantIdFromCurrentUser(current: {
+    user_id?: string
+    role: UserRole
+    tenant_id?: string
+  }) {
+    if (current.tenant_id) return current.tenant_id
+
+    const currentUserId =
+      current.user_id ?? (current as any)?.id ?? (current as any)?.sub
+    if (!currentUserId) return undefined
+
+    const user = await this.usersRepo.findOne({
+      where: { id: currentUserId },
+      relations: ['tenant'],
+    })
+    return user?.tenant?.id
   }
 
   async update(

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { FuelService } from './fuel.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../../common/roles.guard'
@@ -7,6 +7,7 @@ import { CreateFuelProductDto } from './dto/create-fuel-product.dto'
 import { CreateFuelPumpDto } from './dto/create-fuel-pump.dto'
 import { CreateFuelReconciliationDto } from './dto/create-fuel-reconciliation.dto'
 import { CreateFuelExpenseDto } from './dto/create-fuel-expense.dto'
+import { UpdateFuelReconciliationDto } from './dto/update-fuel-reconciliation.dto'
 
 @Controller('fuel')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,6 +50,25 @@ export class FuelController {
   @Get('reconciliations/:branchId')
   async reconciliations(@CurrentUser() user: any, @Param('branchId') branchId: string) {
     return this.fuelService.listReconciliations(user, branchId)
+  }
+
+  @Get('reconciliations/my/:branchId')
+  async myReconciliations(@CurrentUser() user: any, @Param('branchId') branchId: string) {
+    return this.fuelService.listMyReconciliations(user, branchId)
+  }
+
+  @Put('reconciliations/:id')
+  async updateReconciliation(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: UpdateFuelReconciliationDto,
+  ) {
+    return this.fuelService.updateReconciliation(user, id, dto)
+  }
+
+  @Delete('reconciliations/:id')
+  async deleteReconciliation(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.fuelService.deleteReconciliation(user, id)
   }
 
   @Post('expenses')

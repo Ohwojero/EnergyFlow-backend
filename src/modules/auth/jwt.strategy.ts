@@ -20,18 +20,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    let tenantId = payload.tenant_id as string | undefined
-    if (!tenantId && payload?.sub) {
-      const user = await this.usersRepo.findOne({
-        where: { id: payload.sub },
-        relations: ['tenant'],
-      })
-      tenantId = user?.tenant?.id
-    }
+    const user = payload?.sub
+      ? await this.usersRepo.findOne({
+          where: { id: payload.sub },
+          relations: ['tenant'],
+        })
+      : null
+    const tenantId = user?.tenant?.id ?? (payload.tenant_id as string | undefined)
 
     return {
       user_id: payload.sub,
-      role: payload.role,
+      id: payload.sub,
+      role: user?.role ?? payload.role,
+      name: user?.name,
       tenant_id: tenantId,
     }
   }

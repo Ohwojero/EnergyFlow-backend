@@ -4,9 +4,8 @@ export class CreateFuelReconciliationDto {
   @IsString()
   branch_id!: string
 
-  @IsOptional()
   @IsString()
-  pump_id?: string
+  pump_id!: string
 
   @IsNumber()
   shift_number!: number
@@ -22,4 +21,8 @@ export class CreateFuelReconciliationDto {
 
   @IsNumber()
   variance!: number
+
+  @IsOptional()
+  @IsString()
+  sales_staff_name?: string
 }
