@@ -19,6 +19,11 @@ export class FuelController {
     return this.fuelService.getBranches(user)
   }
 
+  @Get('debug/reconciliations')
+  async debugReconciliations(@CurrentUser() user: any) {
+    return this.fuelService.debugReconciliations(user)
+  }
+
   @Post('products')
   async createProduct(@CurrentUser() user: any, @Body() dto: CreateFuelProductDto) {
     return this.fuelService.createProduct(user, dto)
@@ -84,6 +89,20 @@ export class FuelController {
   @Get('expenses')
   async allExpenses(@CurrentUser() user: any) {
     return this.fuelService.listAllExpenses(user)
+  }
+
+  @Put('expenses/:id')
+  async updateExpense(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: CreateFuelExpenseDto,
+  ) {
+    return this.fuelService.updateExpense(user, id, dto)
+  }
+
+  @Delete('expenses/:id')
+  async deleteExpense(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.fuelService.deleteExpense(user, id)
   }
 
   @Get('analytics/:branchId')

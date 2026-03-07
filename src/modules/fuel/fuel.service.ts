@@ -112,11 +112,40 @@ export class FuelService {
   async listMyReconciliations(current: any, branchId: string) {
     await this.ensureBranch(branchId, current)
     const currentUserId = String(current?.id ?? current?.user_id ?? '').trim()
-    if (!currentUserId) return []
-    return this.reconciliationsRepo.find({
-      where: { branch: { id: branchId }, created_by_user_id: currentUserId },
+    console.log('=== listMyReconciliations DEBUG ===');
+    console.log('Branch ID:', branchId);
+    console.log('Current User ID:', currentUserId);
+    console.log('Current User Role:', current?.role);
+    console.log('Current User Name:', current?.name);
+    
+    if (!currentUserId) {
+      console.log('No user ID found, returning empty array');
+      return []
+    }
+    
+    // Strict filter: only return shifts where created_by_user_id matches exactly
+    const reconciliations = await this.reconciliationsRepo.find({
+      where: { 
+        branch: { id: branchId }, 
+        created_by_user_id: currentUserId 
+      },
       relations: ['pump', 'branch'],
     })
+    
+    console.log('Found reconciliations:', reconciliations.length);
+    reconciliations.forEach(rec => {
+      console.log(`  - ID: ${rec.id}, created_by: ${rec.created_by_user_id}, staff_name: ${rec.sales_staff_name}`);
+    });
+    
+    // Additional filter to ensure no null or mismatched IDs slip through
+    const filtered = reconciliations.filter(rec => 
+      rec.created_by_user_id && rec.created_by_user_id === currentUserId
+    )
+    
+    console.log('After filtering:', filtered.length);
+    console.log('=== END DEBUG ===');
+    
+    return filtered
   }
 
   async updateReconciliation(current: any, id: string, dto: UpdateFuelReconciliationDto) {
@@ -224,6 +253,20 @@ export class FuelService {
       .getMany()
   }
 
+  async updateExpense(current: any, id: string, dto: CreateFuelExpenseDto) {
+    const expense = await this.ensureExpense(id, current)
+    if (dto.category !== undefined) expense.category = dto.category
+    if (dto.amount !== undefined) expense.amount = dto.amount
+    if (dto.description !== undefined) expense.description = dto.description
+    return this.expensesRepo.save(expense)
+  }
+
+  async deleteExpense(current: any, id: string) {
+    const expense = await this.ensureExpense(id, current)
+    await this.expensesRepo.remove(expense)
+    return { success: true }
+  }
+
   async analytics(current: any, branchId: string) {
     await this.ensureBranch(branchId, current)
     const inventory = await this.productsRepo
@@ -242,6 +285,29 @@ export class FuelService {
       inventory_value: Number(inventory.total ?? 0),
       total_expenses: Number(expenses.total ?? 0),
     }
+  }
+
+  async debugReconciliations(current: any) {
+    const reconciliations = await this.reconciliationsRepo
+      .createQueryBuilder('rec')
+      .leftJoinAndSelect('rec.branch', 'branch')
+      .leftJoinAndSelect('rec.pump', 'pump')
+      .where('branch.tenant_id = :tenantId', { tenantId: current.tenant_id })
+      .orderBy('rec.created_at', 'DESC')
+      .limit(50)
+      .getMany()
+
+    return reconciliations.map(rec => ({
+      id: rec.id,
+      branch_name: rec.branch?.name,
+      sales_staff_name: rec.sales_staff_name,
+      created_by_user_id: rec.created_by_user_id,
+      created_by_role: rec.created_by_role,
+      sales_amount: rec.sales_amount,
+      created_at: rec.created_at,
+      current_user_id: String(current?.id ?? current?.user_id ?? '').trim(),
+      current_user_role: current?.role,
+    }))
   }
 
   private async ensureBranch(branchId: string, current: any) {
@@ -273,5 +339,19 @@ export class FuelService {
       throw new BadRequestException('Unauthorized reconciliation access')
     }
     return reconciliation
+  }
+
+  private async ensureExpense(id: string, current: any) {
+    const expense = await this.expensesRepo.findOne({
+      where: { id },
+      relations: ['branch', 'branch.tenant'],
+    })
+    if (!expense) {
+      throw new NotFoundException('Expense not found')
+    }
+    if (current.role !== UserRole.SUPER_ADMIN && expense.branch?.tenant?.id !== current.tenant_id) {
+      throw new BadRequestException('Unauthorized expense access')
+    }
+    return expense
   }
 }

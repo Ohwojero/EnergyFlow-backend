@@ -38,6 +38,15 @@ export class Tenant {
   @Column({ type: 'timestamptz', nullable: true })
   last_active?: Date | null
 
+  @Column({ type: 'timestamptz', nullable: true })
+  billing_cycle_start?: Date | null
+
+  @Column({ type: 'timestamptz', nullable: true })
+  last_payment_date?: Date | null
+
+  @Column({ type: 'boolean', default: false })
+  payment_reminder_sent!: boolean
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date
 

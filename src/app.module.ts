@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ScheduleModule } from '@nestjs/schedule'
 import { AuthModule } from './modules/auth/auth.module'
 import { UsersModule } from './modules/users/users.module'
 import { TenantsModule } from './modules/tenants/tenants.module'
@@ -8,6 +9,7 @@ import { BranchesModule } from './modules/branches/branches.module'
 import { GasModule } from './modules/gas/gas.module'
 import { FuelModule } from './modules/fuel/fuel.module'
 import { FuelTransferModule } from './modules/fuel-transfer/fuel-transfer.module'
+import { BillingModule } from './modules/billing/billing.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { SeedModule } from './modules/seed/seed.module'
 
@@ -16,6 +18,7 @@ import { SeedModule } from './modules/seed/seed.module'
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -37,6 +40,7 @@ import { SeedModule } from './modules/seed/seed.module'
     GasModule,
     FuelModule,
     FuelTransferModule,
+    BillingModule,
     AdminModule,
     SeedModule,
   ],
