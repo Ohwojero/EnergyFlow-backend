@@ -97,6 +97,7 @@ export class FuelService {
         'Unassigned',
       created_by_user_id: String(current?.id ?? current?.user_id ?? '').trim() || null,
       created_by_role: String(current?.role ?? '').trim() || null,
+      ...(dto.created_at && { created_at: new Date(dto.created_at) }),
     })
     return this.reconciliationsRepo.save(reconciliation)
   }
@@ -112,14 +113,8 @@ export class FuelService {
   async listMyReconciliations(current: any, branchId: string) {
     await this.ensureBranch(branchId, current)
     const currentUserId = String(current?.id ?? current?.user_id ?? '').trim()
-    console.log('=== listMyReconciliations DEBUG ===');
-    console.log('Branch ID:', branchId);
-    console.log('Current User ID:', currentUserId);
-    console.log('Current User Role:', current?.role);
-    console.log('Current User Name:', current?.name);
     
     if (!currentUserId) {
-      console.log('No user ID found, returning empty array');
       return []
     }
     
@@ -132,18 +127,10 @@ export class FuelService {
       relations: ['pump', 'branch'],
     })
     
-    console.log('Found reconciliations:', reconciliations.length);
-    reconciliations.forEach(rec => {
-      console.log(`  - ID: ${rec.id}, created_by: ${rec.created_by_user_id}, staff_name: ${rec.sales_staff_name}`);
-    });
-    
     // Additional filter to ensure no null or mismatched IDs slip through
     const filtered = reconciliations.filter(rec => 
       rec.created_by_user_id && rec.created_by_user_id === currentUserId
     )
-    
-    console.log('After filtering:', filtered.length);
-    console.log('=== END DEBUG ===');
     
     return filtered
   }

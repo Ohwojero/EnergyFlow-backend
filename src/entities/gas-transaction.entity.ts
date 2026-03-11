@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Branch } from './branch.entity'
 
 export enum GasTransactionType {
@@ -30,6 +30,12 @@ export class GasTransaction {
   @Column({ type: 'varchar', length: 400, default: '' })
   notes!: string
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id?: string | null
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  created_by_role?: string | null
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   created_at!: Date
 }

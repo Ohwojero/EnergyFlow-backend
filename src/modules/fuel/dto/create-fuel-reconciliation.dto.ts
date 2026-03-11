@@ -25,4 +25,8 @@ export class CreateFuelReconciliationDto {
   @IsOptional()
   @IsString()
   sales_staff_name?: string
+
+  @IsOptional()
+  @IsString()
+  created_at?: string
 }

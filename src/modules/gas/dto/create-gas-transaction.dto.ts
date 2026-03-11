@@ -20,4 +20,8 @@ export class CreateGasTransactionDto {
   @IsOptional()
   @IsString()
   notes?: string
+
+  @IsOptional()
+  @IsString()
+  created_at?: string
 }

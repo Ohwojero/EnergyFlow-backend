@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Branch } from './branch.entity'
 import { FuelPump } from './fuel-pump.entity'
 
@@ -37,6 +37,6 @@ export class ShiftReconciliation {
   @Column({ type: 'varchar', length: 40, nullable: true })
   created_by_role?: string | null
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   created_at!: Date
 }

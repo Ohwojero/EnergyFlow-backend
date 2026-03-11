@@ -4,13 +4,11 @@ import { Repository } from 'typeorm'
 import { Branch } from '../../entities/branch.entity'
 import { GasCylinder } from '../../entities/gas-cylinder.entity'
 import { GasTransaction, GasTransactionType } from '../../entities/gas-transaction.entity'
-import { GasDailyActivity } from '../../entities/gas-daily-activity.entity'
 import { GasExpense } from '../../entities/gas-expense.entity'
 import { BranchType, TenantPlan, UserRole } from '../../common/enums'
 import { Tenant } from '../../entities/tenant.entity'
 import { CreateGasCylinderDto } from './dto/create-gas-cylinder.dto'
 import { CreateGasTransactionDto } from './dto/create-gas-transaction.dto'
-import { CreateGasDailyActivityDto } from './dto/create-gas-daily-activity.dto'
 import { CreateGasExpenseDto } from './dto/create-gas-expense.dto'
 import { UpdateGasTransactionDto } from './dto/update-gas-transaction.dto'
 
@@ -21,7 +19,6 @@ export class GasService {
     @InjectRepository(Tenant) private tenantsRepo: Repository<Tenant>,
     @InjectRepository(GasCylinder) private cylindersRepo: Repository<GasCylinder>,
     @InjectRepository(GasTransaction) private transactionsRepo: Repository<GasTransaction>,
-    @InjectRepository(GasDailyActivity) private activitiesRepo: Repository<GasDailyActivity>,
     @InjectRepository(GasExpense) private expensesRepo: Repository<GasExpense>,
   ) {}
 
@@ -76,6 +73,9 @@ export class GasService {
       quantity: dto.quantity,
       amount: dto.amount,
       notes: dto.notes ?? '',
+      created_by_user_id: String(current?.id ?? current?.user_id ?? '').trim() || null,
+      created_by_role: String(current?.role ?? '').trim() || null,
+      ...(dto.created_at && { created_at: new Date(dto.created_at) }),
     })
     return this.transactionsRepo.save(tx)
   }
@@ -86,6 +86,32 @@ export class GasService {
       where: { branch: { id: branchId }, type: GasTransactionType.SALE },
       relations: ['branch'],
     })
+  }
+
+  async listMySales(current: any, branchId: string) {
+    await this.ensureBranch(branchId, current)
+    const currentUserId = String(current?.id ?? current?.user_id ?? '').trim()
+    
+    if (!currentUserId) {
+      return []
+    }
+    
+    // Only return sales where created_by_user_id matches exactly
+    const sales = await this.transactionsRepo.find({
+      where: { 
+        branch: { id: branchId }, 
+        type: GasTransactionType.SALE,
+        created_by_user_id: currentUserId 
+      },
+      relations: ['branch'],
+    })
+    
+    // Additional filter to ensure no null or mismatched IDs slip through
+    const filtered = sales.filter(sale => 
+      sale.created_by_user_id && sale.created_by_user_id === currentUserId
+    )
+    
+    return filtered
   }
 
   async updateSale(current: any, id: string, dto: UpdateGasTransactionDto) {
@@ -117,28 +143,6 @@ export class GasService {
     this.ensureBranchAccess(tx.branch, current)
     await this.transactionsRepo.remove(tx)
     return { success: true }
-  }
-
-  async createDailyActivity(current: any, dto: CreateGasDailyActivityDto) {
-    const branch = await this.ensureBranch(dto.branch_id, current)
-    const activity = this.activitiesRepo.create({
-      branch,
-      date: dto.date,
-      pump_readings: dto.pump_readings,
-      system_record_kg: dto.system_record_kg,
-      sun_adjustment_kg: dto.sun_adjustment_kg,
-      total_kg: dto.total_kg,
-      payment_breakdown: dto.payment_breakdown,
-    })
-    return this.activitiesRepo.save(activity)
-  }
-
-  async listDailyActivities(current: any, branchId: string) {
-    await this.ensureBranch(branchId, current)
-    return this.activitiesRepo.find({
-      where: { branch: { id: branchId } },
-      order: { date: 'DESC' },
-    })
   }
 
   async createExpense(current: any, dto: CreateGasExpenseDto) {

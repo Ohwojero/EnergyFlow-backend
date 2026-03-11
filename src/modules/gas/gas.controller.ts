@@ -5,7 +5,6 @@ import { RolesGuard } from '../../common/roles.guard'
 import { CurrentUser } from '../../common/current-user.decorator'
 import { CreateGasCylinderDto } from './dto/create-gas-cylinder.dto'
 import { CreateGasTransactionDto } from './dto/create-gas-transaction.dto'
-import { CreateGasDailyActivityDto } from './dto/create-gas-daily-activity.dto'
 import { CreateGasExpenseDto } from './dto/create-gas-expense.dto'
 import { UpdateGasTransactionDto } from './dto/update-gas-transaction.dto'
 
@@ -39,6 +38,11 @@ export class GasController {
     return this.gasService.listSales(user, branchId)
   }
 
+  @Get('sales/my/:branchId')
+  async mySales(@CurrentUser() user: any, @Param('branchId') branchId: string) {
+    return this.gasService.listMySales(user, branchId)
+  }
+
   @Patch('sales/:id')
   async updateSale(
     @CurrentUser() user: any,
@@ -51,19 +55,6 @@ export class GasController {
   @Delete('sales/:id')
   async deleteSale(@CurrentUser() user: any, @Param('id') id: string) {
     return this.gasService.deleteSale(user, id)
-  }
-
-  @Post('daily-activities')
-  async createDailyActivity(
-    @CurrentUser() user: any,
-    @Body() dto: CreateGasDailyActivityDto,
-  ) {
-    return this.gasService.createDailyActivity(user, dto)
-  }
-
-  @Get('daily-activities/:branchId')
-  async dailyActivities(@CurrentUser() user: any, @Param('branchId') branchId: string) {
-    return this.gasService.listDailyActivities(user, branchId)
   }
 
   @Post('expenses')
