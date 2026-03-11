@@ -24,6 +24,25 @@ export class FuelController {
     return this.fuelService.debugReconciliations(user)
   }
 
+  @Get('debug/my-reconciliations/:branchId')
+  async debugMyReconciliations(@CurrentUser() user: any, @Param('branchId') branchId: string) {
+    console.log('=== DEBUG MY RECONCILIATIONS ===')
+    console.log('User:', user)
+    console.log('Branch ID:', branchId)
+    const result = await this.fuelService.listMyReconciliations(user, branchId)
+    console.log('Result:', result)
+    return {
+      user_info: {
+        id: user?.id,
+        user_id: user?.user_id,
+        role: user?.role,
+        name: user?.name
+      },
+      branch_id: branchId,
+      reconciliations: result
+    }
+  }
+
   @Post('products')
   async createProduct(@CurrentUser() user: any, @Body() dto: CreateFuelProductDto) {
     return this.fuelService.createProduct(user, dto)

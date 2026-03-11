@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common'
 import { GasService } from './gas.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../../common/roles.guard'
@@ -70,6 +70,20 @@ export class GasController {
   @Get('expenses')
   async allExpenses(@CurrentUser() user: any) {
     return this.gasService.listAllExpenses(user)
+  }
+
+  @Put('expenses/:id')
+  async updateExpense(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateGasExpenseDto>,
+  ) {
+    return this.gasService.updateExpense(user, id, dto)
+  }
+
+  @Delete('expenses/:id')
+  async deleteExpense(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.gasService.deleteExpense(user, id)
   }
 
   @Get('analytics/:branchId')

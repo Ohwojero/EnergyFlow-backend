@@ -114,7 +114,13 @@ export class FuelService {
     await this.ensureBranch(branchId, current)
     const currentUserId = String(current?.id ?? current?.user_id ?? '').trim()
     
+    console.log('=== listMyReconciliations DEBUG ===')
+    console.log('Current user ID:', currentUserId)
+    console.log('Branch ID:', branchId)
+    console.log('Current user role:', current?.role)
+    
     if (!currentUserId) {
+      console.log('No current user ID found, returning empty array')
       return []
     }
     
@@ -127,11 +133,14 @@ export class FuelService {
       relations: ['pump', 'branch'],
     })
     
+    console.log('Found reconciliations with matching user ID:', reconciliations.length)
+    
     // Additional filter to ensure no null or mismatched IDs slip through
     const filtered = reconciliations.filter(rec => 
       rec.created_by_user_id && rec.created_by_user_id === currentUserId
     )
     
+    console.log('Filtered reconciliations:', filtered.length)
     return filtered
   }
 

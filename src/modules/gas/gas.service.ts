@@ -175,6 +175,36 @@ export class GasService {
       .getMany()
   }
 
+  async updateExpense(current: any, id: string, dto: Partial<CreateGasExpenseDto>) {
+    const expense = await this.expensesRepo.findOne({
+      where: { id },
+      relations: ['branch', 'branch.tenant'],
+    })
+    if (!expense) {
+      throw new NotFoundException('Gas expense not found')
+    }
+    this.ensureBranchAccess(expense.branch, current)
+
+    if (dto.category !== undefined) expense.category = dto.category
+    if (dto.amount !== undefined) expense.amount = dto.amount
+    if (dto.description !== undefined) expense.description = dto.description
+
+    return this.expensesRepo.save(expense)
+  }
+
+  async deleteExpense(current: any, id: string) {
+    const expense = await this.expensesRepo.findOne({
+      where: { id },
+      relations: ['branch', 'branch.tenant'],
+    })
+    if (!expense) {
+      throw new NotFoundException('Gas expense not found')
+    }
+    this.ensureBranchAccess(expense.branch, current)
+    await this.expensesRepo.remove(expense)
+    return { success: true }
+  }
+
   async analytics(current: any, branchId: string) {
     await this.ensureBranch(branchId, current)
     const sales = await this.transactionsRepo
