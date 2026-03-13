@@ -80,11 +80,9 @@ export class TenantsService {
   }
 
   private async toExtendedTenant(tenant: Tenant) {
+    await this.repairTenantUsers(tenant)
     const [total_users, total_branches] = await Promise.all([
-      this.usersRepo
-        .createQueryBuilder('user')
-        .where('"user"."tenantId" = :tenantId', { tenantId: tenant.id })
-        .getCount(),
+      this.usersRepo.count({ where: { tenant: { id: tenant.id } } }),
       this.branchesRepo.count({ where: { tenant: { id: tenant.id } } }),
     ])
 
@@ -111,5 +109,26 @@ export class TenantsService {
       total_branches,
       monthly_revenue: Number(revenue.total ?? 0),
     }
+  }
+
+  private async repairTenantUsers(tenant: Tenant) {
+    await this.usersRepo.query(
+      `UPDATE "users" SET "tenantId" = $1
+       WHERE "tenantId" IS NULL AND email = $2`,
+      [tenant.id, tenant.owner_email],
+    )
+
+    await this.usersRepo.query(
+      `UPDATE "users" u
+       SET "tenantId" = $1
+       WHERE u."tenantId" IS NULL
+       AND EXISTS (
+         SELECT 1
+         FROM "user_branches" ub
+         JOIN "branches" b ON b.id = ub."branchId"
+         WHERE ub."userId" = u.id AND b."tenantId" = $1
+       )`,
+      [tenant.id],
+    )
   }
 }

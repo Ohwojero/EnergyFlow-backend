@@ -5,9 +5,10 @@ import { BranchesService } from './branches.service'
 import { Branch } from '../../entities/branch.entity'
 import { Tenant } from '../../entities/tenant.entity'
 import { User } from '../../entities/user.entity'
+import { ActivityLogModule } from '../../common/activity-log.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Branch, Tenant, User])],
+  imports: [TypeOrmModule.forFeature([Branch, Tenant, User]), ActivityLogModule],
   controllers: [BranchesController],
   providers: [BranchesService],
   exports: [BranchesService],
