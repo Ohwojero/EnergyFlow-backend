@@ -81,7 +81,10 @@ export class TenantsService {
 
   private async toExtendedTenant(tenant: Tenant) {
     const [total_users, total_branches] = await Promise.all([
-      this.usersRepo.count({ where: { tenant: { id: tenant.id } } }),
+      this.usersRepo
+        .createQueryBuilder('user')
+        .where('"user"."tenantId" = :tenantId', { tenantId: tenant.id })
+        .getCount(),
       this.branchesRepo.count({ where: { tenant: { id: tenant.id } } }),
     ])
 

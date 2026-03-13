@@ -70,6 +70,7 @@ export class AuthService {
       tenant,
       assigned_branch_types: [],
       assigned_branches: [],
+      business_type: dto.business_type,
       is_active: true,
     })
     await this.usersRepo.save(user)
@@ -149,6 +150,7 @@ export class AuthService {
       tenant_branch_types: user.tenant?.branch_types ?? [],
       assigned_branches: user.assigned_branches?.map((b) => b.id) ?? [],
       assigned_branch_types: user.assigned_branch_types ?? [],
+      business_type: user.business_type,
       created_at: user.created_at,
     }
   }

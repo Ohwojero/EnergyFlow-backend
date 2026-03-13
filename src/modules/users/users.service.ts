@@ -76,12 +76,41 @@ export class UsersService {
     let roleToCreate = isManager ? UserRole.SALES_STAFF : dto.role
 
     if (tenant.subscription_plan === TenantPlan.PERSONAL) {
-      roleToCreate = UserRole.SALES_STAFF
-      const personalGasBranch = await this.ensurePersonalDefaultGasBranch(tenant)
-      if (!personalGasBranch) {
-        throw new BadRequestException('Personal plan requires a default gas outlet')
+      const currentUser = await this.usersRepo.findOne({ where: { id: current.user_id } })
+      const ownerBusinessType = currentUser?.business_type
+
+      if (current.role === UserRole.ORG_OWNER) {
+        const resolvedRole =
+          ownerBusinessType === 'fuel'
+            ? UserRole.FUEL_MANAGER
+            : ownerBusinessType === 'gas'
+              ? UserRole.GAS_MANAGER
+              : dto.role
+        if (resolvedRole !== UserRole.GAS_MANAGER && resolvedRole !== UserRole.FUEL_MANAGER) {
+          throw new BadRequestException('Personal plan owner can only create a manager user')
+        }
+        if (ownerBusinessType && resolvedRole === UserRole.GAS_MANAGER && ownerBusinessType !== 'gas') {
+          throw new BadRequestException('Personal plan is configured for fuel operations only')
+        }
+        if (ownerBusinessType && resolvedRole === UserRole.FUEL_MANAGER && ownerBusinessType !== 'fuel') {
+          throw new BadRequestException('Personal plan is configured for gas operations only')
+        }
+        roleToCreate = resolvedRole
+        const targetType = resolvedRole === UserRole.FUEL_MANAGER ? BranchType.FUEL : BranchType.GAS
+        const personalBranch = await this.ensurePersonalDefaultBranch(tenant, targetType)
+        if (!personalBranch) {
+          throw new BadRequestException('Personal plan requires a default branch')
+        }
+        branchIds = [personalBranch.id]
+      } else {
+        roleToCreate = UserRole.SALES_STAFF
       }
-      branchIds = [personalGasBranch.id]
+    }
+
+    if (tenant.subscription_plan === TenantPlan.ORGANISATION && current.role === UserRole.ORG_OWNER) {
+      if (dto.role === UserRole.SALES_STAFF) {
+        throw new BadRequestException('Organization owners can only create manager users')
+      }
     }
 
     if (isManager) {
@@ -164,7 +193,16 @@ export class UsersService {
     const isManager = current.role === UserRole.GAS_MANAGER || current.role === UserRole.FUEL_MANAGER
     let nextRole = dto.role ?? user.role
 
-    if (tenant.subscription_plan === TenantPlan.PERSONAL || isManager) {
+    if (tenant.subscription_plan === TenantPlan.PERSONAL) {
+      if (current.role === UserRole.ORG_OWNER) {
+        if (nextRole !== UserRole.GAS_MANAGER && nextRole !== UserRole.FUEL_MANAGER) {
+          throw new BadRequestException('Personal plan owner can only assign manager roles')
+        }
+      } else {
+        nextRole = UserRole.SALES_STAFF
+      }
+    }
+    if (isManager) {
       nextRole = UserRole.SALES_STAFF
     }
     if (nextRole === UserRole.SUPER_ADMIN && current.role !== UserRole.SUPER_ADMIN) {
@@ -179,11 +217,15 @@ export class UsersService {
     let branchIds = dto.branch_ids ?? currentBranchIds
 
     if (tenant.subscription_plan === TenantPlan.PERSONAL) {
-      const personalGasBranch = await this.ensurePersonalDefaultGasBranch(tenant)
-      if (!personalGasBranch) {
-        throw new BadRequestException('Personal plan requires a default gas outlet')
+      const targetType =
+        nextRole === UserRole.FUEL_MANAGER ? BranchType.FUEL :
+        nextRole === UserRole.GAS_MANAGER ? BranchType.GAS :
+        BranchType.GAS
+      const personalBranch = await this.ensurePersonalDefaultBranch(tenant, targetType)
+      if (!personalBranch) {
+        throw new BadRequestException('Personal plan requires a default branch')
       }
-      branchIds = [personalGasBranch.id]
+      branchIds = [personalBranch.id]
     }
 
     if (isManager) {
@@ -286,30 +328,30 @@ export class UsersService {
     throw new BadRequestException('Unauthorized user access')
   }
 
-  private async ensurePersonalDefaultGasBranch(tenant: Tenant) {
+  private async ensurePersonalDefaultBranch(tenant: Tenant, branchType: BranchType) {
     if (tenant.subscription_plan !== TenantPlan.PERSONAL) return null
 
-    let gasBranch = await this.branchesRepo.findOne({
-      where: { tenant: { id: tenant.id }, type: BranchType.GAS },
+    let branch = await this.branchesRepo.findOne({
+      where: { tenant: { id: tenant.id }, type: branchType },
     })
 
-    if (!gasBranch) {
-      gasBranch = this.branchesRepo.create({
+    if (!branch) {
+      branch = this.branchesRepo.create({
         name: 'Main Outlet',
-        type: BranchType.GAS,
+        type: branchType,
         location: 'Default',
         tenant,
         manager: null,
         status: 'active',
       })
-      gasBranch = await this.branchesRepo.save(gasBranch)
+      branch = await this.branchesRepo.save(branch)
     }
 
-    if (!(tenant.branch_types ?? []).includes(BranchType.GAS)) {
-      tenant.branch_types = [...(tenant.branch_types ?? []), BranchType.GAS]
+    if (!(tenant.branch_types ?? []).includes(branchType)) {
+      tenant.branch_types = [...(tenant.branch_types ?? []), branchType]
       await this.tenantsRepo.save(tenant)
     }
 
-    return gasBranch
+    return branch
   }
 }

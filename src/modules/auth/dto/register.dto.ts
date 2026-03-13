@@ -1,5 +1,10 @@
-import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator'
+import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator'
 import { TenantPlan } from '../../../common/enums'
+
+export enum BusinessType {
+  GAS = 'gas',
+  FUEL = 'fuel'
+}
 
 export class RegisterDto {
   @IsString()
@@ -17,4 +22,8 @@ export class RegisterDto {
 
   @IsEnum(TenantPlan)
   plan!: TenantPlan
+
+  @IsOptional()
+  @IsEnum(BusinessType)
+  business_type?: BusinessType
 }

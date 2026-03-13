@@ -23,7 +23,7 @@ export class BranchesService {
     if (!current.tenant_id) {
       return []
     }
-    await this.ensurePersonalDefaultGasBranch(current.tenant_id)
+    await this.ensurePersonalDefaultBranch(current.tenant_id)
     return this.branchesRepo.find({
       where: { tenant: { id: current.tenant_id } },
       relations: ['tenant', 'manager'],
@@ -40,9 +40,7 @@ export class BranchesService {
     if (!current.tenant_id) {
       return []
     }
-    if (type === BranchType.GAS) {
-      await this.ensurePersonalDefaultGasBranch(current.tenant_id)
-    }
+    await this.ensurePersonalDefaultBranch(current.tenant_id)
     return this.branchesRepo.find({
       where: { type, tenant: { id: current.tenant_id } },
       relations: ['tenant', 'manager'],
@@ -284,36 +282,36 @@ export class BranchesService {
     }
   }
 
-  private async ensurePersonalDefaultGasBranch(tenantId: string) {
+  private async ensurePersonalDefaultBranch(tenantId: string) {
     const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } })
     if (!tenant || tenant.subscription_plan !== TenantPlan.PERSONAL) {
       return
     }
 
-    const existingGas = await this.branchesRepo.findOne({
-      where: { tenant: { id: tenantId }, type: BranchType.GAS },
+    const owner = await this.usersRepo.findOne({
+      where: { tenant: { id: tenantId }, role: UserRole.ORG_OWNER },
+      order: { created_at: 'ASC' },
     })
-    if (existingGas) {
-      if (!(tenant.branch_types ?? []).includes(BranchType.GAS)) {
-        tenant.branch_types = [...(tenant.branch_types ?? []), BranchType.GAS]
-        await this.tenantsRepo.save(tenant)
-      }
-      return
+    const preferredType = owner?.business_type === 'fuel' ? BranchType.FUEL : BranchType.GAS
+
+    const existing = await this.branchesRepo.findOne({
+      where: { tenant: { id: tenantId }, type: preferredType },
+    })
+    if (!existing) {
+      const branch = this.branchesRepo.create({
+        name: 'Main Outlet',
+        type: preferredType,
+        location: 'Default',
+        manager_name: 'Main Outlet',
+        tenant,
+        manager: null,
+        status: 'active',
+      })
+      await this.branchesRepo.save(branch)
     }
 
-    const branch = this.branchesRepo.create({
-      name: 'Main Outlet',
-      type: BranchType.GAS,
-      location: 'Default',
-      manager_name: 'Main Outlet',
-      tenant,
-      manager: null,
-      status: 'active',
-    })
-    await this.branchesRepo.save(branch)
-
-    if (!(tenant.branch_types ?? []).includes(BranchType.GAS)) {
-      tenant.branch_types = [...(tenant.branch_types ?? []), BranchType.GAS]
+    if (!(tenant.branch_types ?? []).includes(preferredType)) {
+      tenant.branch_types = [...(tenant.branch_types ?? []), preferredType]
       await this.tenantsRepo.save(tenant)
     }
   }

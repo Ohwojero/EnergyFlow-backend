@@ -12,6 +12,11 @@ import { UserRole, BranchType } from '../common/enums'
 import { Tenant } from './tenant.entity'
 import { Branch } from './branch.entity'
 
+export enum BusinessType {
+  GAS = 'gas',
+  FUEL = 'fuel'
+}
+
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -31,6 +36,9 @@ export class User {
 
   @Column({ type: 'enum', enum: BranchType, array: true, default: '{}' })
   assigned_branch_types!: BranchType[]
+
+  @Column({ type: 'enum', enum: BusinessType, nullable: true })
+  business_type?: BusinessType
 
   @Column({ type: 'boolean', default: true })
   is_active!: boolean
