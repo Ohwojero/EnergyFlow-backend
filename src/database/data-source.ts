@@ -19,11 +19,12 @@ loadEnv()
 
 const dataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST ?? 'localhost',
-  port: Number(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USER ?? 'postgres',
-  password: process.env.DB_PASS ?? 'postgres',
-  database: process.env.DB_NAME ?? 'energyflow',
+  url: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL,
+  host: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL ? undefined : process.env.DB_HOST ?? 'localhost',
+  port: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL ? undefined : Number(process.env.DB_PORT ?? '5432'),
+  username: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL ? undefined : process.env.DB_USER ?? 'postgres',
+  password: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL ? undefined : process.env.DB_PASS ?? 'postgres',
+  database: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL ? undefined : process.env.DB_NAME ?? 'energyflow',
   synchronize: false,
   logging: process.env.DB_LOG === 'true',
   entities: [
