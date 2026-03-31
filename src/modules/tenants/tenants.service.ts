@@ -125,8 +125,8 @@ export class TenantsService {
        AND EXISTS (
          SELECT 1
          FROM "user_branches" ub
-         JOIN "branches" b ON b.id = ub."branchId"
-         WHERE ub."userId" = u.id AND b."tenantId" = $1
+         JOIN "branches" b ON b.id = ub."branchesId"
+         WHERE ub."usersId" = u.id AND b."tenantId" = $1
        )`,
       [tenant.id],
     )

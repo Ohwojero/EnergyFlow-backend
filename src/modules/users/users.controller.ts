@@ -28,7 +28,7 @@ export class UsersController {
     const created = await this.usersService.create(user, dto)
     const ipAddress = req?.ip || req?.headers?.['x-forwarded-for'] || 'system'
     await this.activityLogs.logEvent({
-      tenantId: created?.tenant_id ?? user?.tenant_id,
+      tenantId: created?.tenant?.id ?? user?.tenant_id,
       userId: user?.user_id ?? user?.id,
       action: 'create_user',
       description: `Created user ${created?.email ?? dto.email}`,
@@ -43,7 +43,7 @@ export class UsersController {
     const updated = await this.usersService.update(user, id, dto)
     const ipAddress = req?.ip || req?.headers?.['x-forwarded-for'] || 'system'
     await this.activityLogs.logEvent({
-      tenantId: updated?.tenant_id ?? user?.tenant_id,
+      tenantId: updated?.tenant?.id ?? user?.tenant_id,
       userId: user?.user_id ?? user?.id,
       action: 'update_user',
       description: `Updated user ${updated?.email ?? id}`,
