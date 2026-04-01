@@ -6,12 +6,17 @@ import { FuelProduct } from '../../entities/fuel-product.entity'
 import { FuelPump } from '../../entities/fuel-pump.entity'
 import { ShiftReconciliation } from '../../entities/shift-reconciliation.entity'
 import { FuelExpense } from '../../entities/fuel-expense.entity'
+import { FuelTank } from '../../entities/fuel-tank.entity'
+import { FuelTankReading } from '../../entities/fuel-tank-reading.entity'
 import { BranchType, UserRole } from '../../common/enums'
 import { CreateFuelProductDto } from './dto/create-fuel-product.dto'
 import { CreateFuelPumpDto } from './dto/create-fuel-pump.dto'
 import { CreateFuelReconciliationDto } from './dto/create-fuel-reconciliation.dto'
 import { CreateFuelExpenseDto } from './dto/create-fuel-expense.dto'
 import { UpdateFuelReconciliationDto } from './dto/update-fuel-reconciliation.dto'
+import { CreateFuelTankDto } from './dto/create-fuel-tank.dto'
+import { UpdateFuelTankDto } from './dto/update-fuel-tank.dto'
+import { CreateFuelTankReadingDto } from './dto/create-fuel-tank-reading.dto'
 
 @Injectable()
 export class FuelService {
@@ -21,6 +26,8 @@ export class FuelService {
     @InjectRepository(FuelPump) private pumpsRepo: Repository<FuelPump>,
     @InjectRepository(ShiftReconciliation) private reconciliationsRepo: Repository<ShiftReconciliation>,
     @InjectRepository(FuelExpense) private expensesRepo: Repository<FuelExpense>,
+    @InjectRepository(FuelTank) private tanksRepo: Repository<FuelTank>,
+    @InjectRepository(FuelTankReading) private tankReadingsRepo: Repository<FuelTankReading>,
   ) {}
 
   async getBranches(current: { role: UserRole; tenant_id?: string }) {
@@ -68,6 +75,92 @@ export class FuelService {
   async listPumps(current: any, branchId: string) {
     await this.ensureBranch(branchId, current)
     return this.pumpsRepo.find({ where: { branch: { id: branchId } } })
+  }
+
+  async createTank(current: any, dto: CreateFuelTankDto) {
+    this.ensureTankManagerAccess(current)
+    const branch = await this.ensureBranch(dto.branch_id, current)
+    const tank = this.tanksRepo.create({
+      branch,
+      name: dto.name.trim(),
+      product_type: dto.product_type,
+      capacity_litres: dto.capacity_litres,
+      current_volume_litres: dto.current_volume_litres ?? 0,
+      status: dto.status?.trim() || 'active',
+    })
+    return this.tanksRepo.save(tank)
+  }
+
+  async listTanks(current: any, branchId: string) {
+    this.ensureTankManagerAccess(current)
+    await this.ensureBranch(branchId, current)
+    return this.tanksRepo.find({
+      where: { branch: { id: branchId } },
+      relations: ['branch'],
+      order: { created_at: 'ASC' },
+    })
+  }
+
+  async updateTank(current: any, id: string, dto: UpdateFuelTankDto) {
+    this.ensureTankManagerAccess(current)
+    const tank = await this.ensureTank(id, current)
+    if (dto.name !== undefined) tank.name = dto.name.trim()
+    if (dto.product_type !== undefined) tank.product_type = dto.product_type
+    if (dto.capacity_litres !== undefined) tank.capacity_litres = dto.capacity_litres
+    if (dto.current_volume_litres !== undefined) tank.current_volume_litres = dto.current_volume_litres
+    if (dto.status !== undefined) tank.status = dto.status.trim() || tank.status
+    return this.tanksRepo.save(tank)
+  }
+
+  async createTankReading(current: any, dto: CreateFuelTankReadingDto) {
+    this.ensureTankManagerAccess(current)
+    const tank = await this.ensureTank(dto.tank_id, current)
+    const opening = Number(dto.opening_volume_litres ?? 0)
+    const deliveries = Number(dto.deliveries_litres ?? 0)
+    const transfersOut = Number(dto.transfers_out_litres ?? 0)
+    const sales = Number(dto.sales_litres ?? 0)
+    const actualClosing = Number(dto.actual_closing_litres ?? 0)
+    const expectedClosing = opening + deliveries - sales - transfersOut
+    const variance = actualClosing - expectedClosing
+
+    const existing = await this.tankReadingsRepo.findOne({
+      where: { tank: { id: tank.id }, reading_date: dto.reading_date },
+      relations: ['tank', 'tank.branch', 'tank.branch.tenant'],
+    })
+    if (existing) {
+      throw new BadRequestException('A tank reading already exists for this date')
+    }
+
+    const reading = this.tankReadingsRepo.create({
+      tank,
+      reading_date: dto.reading_date,
+      opening_volume_litres: opening,
+      deliveries_litres: deliveries,
+      transfers_out_litres: transfersOut,
+      sales_litres: sales,
+      expected_closing_litres: expectedClosing,
+      actual_closing_litres: actualClosing,
+      variance_litres: variance,
+      dip_reading_litres: dto.dip_reading_litres ?? null,
+      sensor_volume_litres: dto.sensor_volume_litres ?? null,
+      recorded_by_name: String(current?.name ?? '').trim() || null,
+      notes: dto.notes?.trim() ?? '',
+    })
+
+    const saved = await this.tankReadingsRepo.save(reading)
+    tank.current_volume_litres = actualClosing
+    await this.tanksRepo.save(tank)
+    return saved
+  }
+
+  async listTankReadingsByBranch(current: any, branchId: string) {
+    this.ensureTankManagerAccess(current)
+    await this.ensureBranch(branchId, current)
+    return this.tankReadingsRepo.find({
+      where: { tank: { branch: { id: branchId } } },
+      relations: ['tank', 'tank.branch'],
+      order: { reading_date: 'DESC', created_at: 'DESC' },
+    })
   }
 
   async createReconciliation(current: any, dto: CreateFuelReconciliationDto) {
@@ -349,5 +442,30 @@ export class FuelService {
       throw new BadRequestException('Unauthorized expense access')
     }
     return expense
+  }
+
+  private ensureTankManagerAccess(current: any) {
+    const role = String(current?.role ?? '').trim() as UserRole
+    if (
+      role !== UserRole.SUPER_ADMIN &&
+      role !== UserRole.ORG_OWNER &&
+      role !== UserRole.FUEL_MANAGER
+    ) {
+      throw new ForbiddenException('Tank storage management is restricted to owners and fuel managers')
+    }
+  }
+
+  private async ensureTank(id: string, current: any) {
+    const tank = await this.tanksRepo.findOne({
+      where: { id },
+      relations: ['branch', 'branch.tenant'],
+    })
+    if (!tank) {
+      throw new NotFoundException('Fuel tank not found')
+    }
+    if (current.role !== UserRole.SUPER_ADMIN && tank.branch?.tenant?.id !== current.tenant_id) {
+      throw new BadRequestException('Unauthorized tank access')
+    }
+    return tank
   }
 }

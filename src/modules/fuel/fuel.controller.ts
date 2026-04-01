@@ -8,6 +8,9 @@ import { CreateFuelPumpDto } from './dto/create-fuel-pump.dto'
 import { CreateFuelReconciliationDto } from './dto/create-fuel-reconciliation.dto'
 import { CreateFuelExpenseDto } from './dto/create-fuel-expense.dto'
 import { UpdateFuelReconciliationDto } from './dto/update-fuel-reconciliation.dto'
+import { CreateFuelTankDto } from './dto/create-fuel-tank.dto'
+import { UpdateFuelTankDto } from './dto/update-fuel-tank.dto'
+import { CreateFuelTankReadingDto } from './dto/create-fuel-tank-reading.dto'
 
 @Controller('fuel')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,6 +64,31 @@ export class FuelController {
   @Get('pumps/:branchId')
   async pumps(@CurrentUser() user: any, @Param('branchId') branchId: string) {
     return this.fuelService.listPumps(user, branchId)
+  }
+
+  @Post('tanks')
+  async createTank(@CurrentUser() user: any, @Body() dto: CreateFuelTankDto) {
+    return this.fuelService.createTank(user, dto)
+  }
+
+  @Get('tanks/:branchId')
+  async tanks(@CurrentUser() user: any, @Param('branchId') branchId: string) {
+    return this.fuelService.listTanks(user, branchId)
+  }
+
+  @Put('tanks/:id')
+  async updateTank(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: UpdateFuelTankDto) {
+    return this.fuelService.updateTank(user, id, dto)
+  }
+
+  @Post('tank-readings')
+  async createTankReading(@CurrentUser() user: any, @Body() dto: CreateFuelTankReadingDto) {
+    return this.fuelService.createTankReading(user, dto)
+  }
+
+  @Get('tank-readings/branch/:branchId')
+  async tankReadings(@CurrentUser() user: any, @Param('branchId') branchId: string) {
+    return this.fuelService.listTankReadingsByBranch(user, branchId)
   }
 
   @Post('reconciliations')

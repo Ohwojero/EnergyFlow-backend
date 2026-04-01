@@ -6,6 +6,8 @@ import { Branch } from '../entities/branch.entity'
 import { FuelExpense } from '../entities/fuel-expense.entity'
 import { FuelProduct } from '../entities/fuel-product.entity'
 import { FuelPump } from '../entities/fuel-pump.entity'
+import { FuelTank } from '../entities/fuel-tank.entity'
+import { FuelTankReading } from '../entities/fuel-tank-reading.entity'
 import { GasCylinder } from '../entities/gas-cylinder.entity'
 import { GasDailyActivity } from '../entities/gas-daily-activity.entity'
 import { GasExpense } from '../entities/gas-expense.entity'
@@ -33,6 +35,8 @@ const dataSource = new DataSource({
     FuelExpense,
     FuelProduct,
     FuelPump,
+    FuelTank,
+    FuelTankReading,
     GasCylinder,
     GasDailyActivity,
     GasExpense,

@@ -19,6 +19,7 @@ import { FuelPump } from './fuel-pump.entity'
 import { ShiftReconciliation } from './shift-reconciliation.entity'
 import { FuelExpense } from './fuel-expense.entity'
 import { GasExpense } from './gas-expense.entity'
+import { FuelTank } from './fuel-tank.entity'
 
 @Entity({ name: 'branches' })
 export class Branch {
@@ -66,6 +67,9 @@ export class Branch {
 
   @OneToMany(() => FuelPump, (pump: FuelPump) => pump.branch)
   fuel_pumps!: FuelPump[]
+
+  @OneToMany(() => FuelTank, (tank: FuelTank) => tank.branch)
+  fuel_tanks!: FuelTank[]
 
   @OneToMany(() => ShiftReconciliation, (shift: ShiftReconciliation) => shift.branch)
   fuel_reconciliations!: ShiftReconciliation[]

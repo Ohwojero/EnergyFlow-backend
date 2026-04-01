@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 
-export class AddUserTrackingToGasTransactions1731312000000 implements MigrationInterface {
-  name = 'AddUserTrackingToGasTransactions1731312000000'
+export class AddUserTrackingToGasTransactions1772463935100 implements MigrationInterface {
+  name = 'AddUserTrackingToGasTransactions1772463935100'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "gas_transactions" ADD "created_by_user_id" uuid`)
